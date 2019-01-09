@@ -1,0 +1,65 @@
+diff --git a/src/com/android/settings/localepicker/LocaleListEditor.java b/src/com/android/settings/localepicker/LocaleListEditor.java
+index 9590545c50..d9a0863838 100644
+--- a/src/com/android/settings/localepicker/LocaleListEditor.java
++++ b/src/com/android/settings/localepicker/LocaleListEditor.java
+@@ -129,7 +129,7 @@ public class LocaleListEditor extends SettingsPreferenceFragment
+     private void setRemoveMode(boolean mRemoveMode) {
+         this.mRemoveMode = mRemoveMode;
+         mAdapter.setRemoveMode(mRemoveMode);
+-        mAddLanguage.setVisibility(mRemoveMode ? View.INVISIBLE : View.VISIBLE);
++        //mAddLanguage.setVisibility(mRemoveMode ? View.INVISIBLE : View.VISIBLE);
+         updateVisibilityOfRemoveMenu();
+     }
+ 
+@@ -222,11 +222,16 @@ public class LocaleListEditor extends SettingsPreferenceFragment
+     private static List<LocaleStore.LocaleInfo> getUserLocaleList(Context context) {
+         final List<LocaleStore.LocaleInfo> result = new ArrayList<>();
+ 
+-        final LocaleList localeList = LocalePicker.getLocales();
++        /*final LocaleList localeList = LocalePicker.getLocales();
+         for (int i = 0; i < localeList.size(); i++) {
+             Locale locale = localeList.get(i);
+             result.add(LocaleStore.getLocaleInfo(locale));
+-        }
++        }*/
++	result.add(LocaleStore.getLocaleInfo(Locale.forLanguageTag("en-US")));
++	result.add(LocaleStore.getLocaleInfo(Locale.forLanguageTag("zh-Hans-HK")));
++	result.add(LocaleStore.getLocaleInfo(Locale.forLanguageTag("zh-Hans-MO")));
++	result.add(LocaleStore.getLocaleInfo(Locale.forLanguageTag("zh-Hant-HK")));
++	result.add(LocaleStore.getLocaleInfo(Locale.forLanguageTag("zh-Hant-MO")));
+ 
+         return result;
+     }
+@@ -241,12 +246,12 @@ public class LocaleListEditor extends SettingsPreferenceFragment
+         mAdapter.setRecyclerView(list);
+         list.setAdapter(mAdapter);
+ 
+-        mAddLanguage = view.findViewById(R.id.add_language);
++        /* mAddLanguage = view.findViewById(R.id.add_language);
+         mAddLanguage.setOnClickListener(new View.OnClickListener() {
+             @Override
+             public void onClick(View v) {
+                 final LocalePickerWithRegion selector = LocalePickerWithRegion.createLanguagePicker(
+-                        getContext(), LocaleListEditor.this, false /* translate only */);
++                        getContext(), LocaleListEditor.this, false );
+                 getFragmentManager()
+                         .beginTransaction()
+                         .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
+@@ -255,6 +260,7 @@ public class LocaleListEditor extends SettingsPreferenceFragment
+                         .commit();
+             }
+         });
++	*/
+     }
+ 
+     @Override
+@@ -274,7 +280,8 @@ public class LocaleListEditor extends SettingsPreferenceFragment
+         if (menuItemRemove != null) {
+             menuItemRemove.setShowAsAction(
+                     mRemoveMode ? MenuItem.SHOW_AS_ACTION_ALWAYS : MenuItem.SHOW_AS_ACTION_NEVER);
+-            menuItemRemove.setVisible(mAdapter.getItemCount() > 1);
++            //menuItemRemove.setVisible(mAdapter.getItemCount() > 1);
++            menuItemRemove.setVisible(false);// Having pre-set default set of language supported.
+         }
+     }
+ }
