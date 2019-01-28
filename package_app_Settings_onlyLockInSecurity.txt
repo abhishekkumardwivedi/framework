@@ -1,0 +1,275 @@
+diff --git a/res/layout/encryption_interstitial_footer.xml b/res/layout/encryption_interstitial_footer.xml
+index 2f876f31c0..939df107a4 100644
+--- a/res/layout/encryption_interstitial_footer.xml
++++ b/res/layout/encryption_interstitial_footer.xml
+@@ -22,11 +22,11 @@
+     android:layout_height="wrap_content">
+ 
+     <Button
+-        android:id="@+id/encrypt_dont_require_password"
+-        style="@style/SuwGlifButton.Secondary"
++        android:id="@+id/encrypt_require_password"
++        style="@style/SuwGlifButton.Primary"
+         android:layout_width="wrap_content"
+-        android:layout_height="wrap_content"
+-        android:text="@string/encryption_interstitial_no" />
++	android:layout_height="wrap_content"
++	android:visibility="gone" />
+ 
+     <Space
+         android:layout_width="0dp"
+@@ -34,10 +34,10 @@
+         android:layout_weight="1" />
+ 
+     <Button
+-        android:id="@+id/encrypt_require_password"
+-        style="@style/SuwGlifButton.Primary"
++        android:id="@+id/encrypt_dont_require_password"
++        style="@style/SuwGlifButton.Secondary"
+         android:layout_width="wrap_content"
+         android:layout_height="wrap_content"
+-        android:text="@string/encryption_interstitial_yes" />
++        android:text="Okay" />
+ 
+ </LinearLayout>
+diff --git a/res/layout/locale_drag_cell.xml b/res/layout/locale_drag_cell.xml
+index db9454a21c..c76ca9708e 100644
+--- a/res/layout/locale_drag_cell.xml
++++ b/res/layout/locale_drag_cell.xml
+@@ -20,7 +20,7 @@
+               android:layout_width="match_parent"
+               android:layout_height="wrap_content"
+               android:minHeight="?android:listPreferredItemHeight"
+-              android:background="?android:colorBackground"
++              android:background="#000000"
+               android:layoutDirection="locale"
+               android:textDirection="locale">
+ 
+diff --git a/res/layout/locale_order_list.xml b/res/layout/locale_order_list.xml
+index d2ad072b69..8d052a7c8c 100644
+--- a/res/layout/locale_order_list.xml
++++ b/res/layout/locale_order_list.xml
+@@ -33,7 +33,7 @@
+             android:layout_height="wrap_content"
+             android:scrollbars="vertical"/>
+ 
+-        <Button
++        <!--Button
+             android:id="@+id/add_language"
+             android:layout_width="match_parent"
+             android:layout_height="?android:listPreferredItemHeight"
+@@ -44,7 +44,7 @@
+             android:textAlignment="textStart"
+             android:text="@string/add_a_language"
+             style="@style/Base.Widget.AppCompat.Button.Borderless"
+-            android:textAppearance="?android:attr/textAppearanceListItem"/>
++            android:textAppearance="?android:attr/textAppearanceListItem"/-->
+ 
+     </LinearLayout>
+ 
+diff --git a/res/values/strings.xml b/res/values/strings.xml
+index 8265475a98..1aa6565b67 100644
+--- a/res/values/strings.xml
++++ b/res/values/strings.xml
+@@ -7356,6 +7356,9 @@
+     <!-- Encryption interstitial button to continue with the shown setting.  Appears on screen that asks the user to opt in/out of encrypting device with a pin/pattern/password. [CHAR LIMIT=NONE] -->
+     <string name="encryption_continue_button">Continue</string>
+ 
++    <string name="unencrypted_interstitial_message">
++    This will still allow the device to bootup during restart and screen will be locked upon device bootup.
++    </string>
+     <!-- Message shown on encryption interstitial to ask the user whether or not they want to use a PIN to encrypt the device. [CHAR LIMIT=NONE] -->
+     <string name="encryption_interstitial_message_pin">
+    You can further protect this device by requiring your PIN before it starts up. Until the device starts up, it can\u2019t receive calls, messages, or notifications, including alarms.
+diff --git a/src/com/android/settings/EncryptionAndCredential.java b/src/com/android/settings/EncryptionAndCredential.java
+index 4892f7ef38..b0c0a3f036 100644
+--- a/src/com/android/settings/EncryptionAndCredential.java
++++ b/src/com/android/settings/EncryptionAndCredential.java
+@@ -62,7 +62,7 @@ public class EncryptionAndCredential extends SettingsPreferenceFragment implemen
+     private RestrictedPreference mResetCredentials;
+ 
+     private boolean mIsAdmin;
+-
++    private static final boolean ENCRYPTION_ENABLED = false;
+     @Override
+     public int getMetricsCategory() {
+         return MetricsEvent.ENCRYPTION_AND_CREDENTIAL;
+@@ -94,7 +94,7 @@ public class EncryptionAndCredential extends SettingsPreferenceFragment implemen
+         // Add options for device encryption
+         mIsAdmin = mUm.isAdminUser();
+ 
+-        if (mIsAdmin) {
++        if (mIsAdmin && ENCRYPTION_ENABLED) {
+             if (LockPatternUtils.isDeviceEncryptionEnabled()) {
+                 // The device is currently encrypted.
+                 addPreferencesFromResource(R.xml.security_settings_encrypted);
+diff --git a/src/com/android/settings/EncryptionInterstitial.java b/src/com/android/settings/EncryptionInterstitial.java
+index f0115b8ef3..66cf166780 100644
+--- a/src/com/android/settings/EncryptionInterstitial.java
++++ b/src/com/android/settings/EncryptionInterstitial.java
+@@ -49,7 +49,7 @@ public class EncryptionInterstitial extends SettingsActivity {
+     protected static final String EXTRA_UNLOCK_METHOD_INTENT = "extra_unlock_method_intent";
+     public static final String EXTRA_REQUIRE_PASSWORD = "extra_require_password";
+     private static final int CHOOSE_LOCK_REQUEST = 100;
+-
++    
+     @Override
+     public Intent getIntent() {
+         Intent modIntent = new Intent(super.getIntent());
+@@ -116,7 +116,8 @@ public class EncryptionInterstitial extends SettingsActivity {
+             mRequestedPasswordQuality = intent.getIntExtra(EXTRA_PASSWORD_QUALITY, 0);
+             mUnlockMethodIntent = intent.getParcelableExtra(EXTRA_UNLOCK_METHOD_INTENT);
+             final int msgId;
+-            switch (mRequestedPasswordQuality) {
++
++           /* switch (mRequestedPasswordQuality) {
+                 case DevicePolicyManager.PASSWORD_QUALITY_SOMETHING:
+                     msgId = forFingerprint ?
+                             R.string.encryption_interstitial_message_pattern_for_fingerprint :
+@@ -133,11 +134,13 @@ public class EncryptionInterstitial extends SettingsActivity {
+                             R.string.encryption_interstitial_message_password_for_fingerprint :
+                             R.string.encryption_interstitial_message_password;
+                     break;
+-            }
++            } */
++	    msgId = R.string.unencrypted_interstitial_message;
+             TextView message = (TextView) getActivity().findViewById(R.id.encryption_message);
+             message.setText(msgId);
+ 
+-            mRequirePasswordToDecrypt.setOnClickListener(this);
++            //mRequirePasswordToDecrypt.setOnClickListener(this);
++            mRequirePasswordToDecrypt.setVisibility(View.GONE);
+             mDontRequirePasswordToDecrypt.setOnClickListener(this);
+ 
+             setRequirePasswordState(getActivity().getIntent().getBooleanExtra(
+diff --git a/src/com/android/settings/SecuritySettings.java b/src/com/android/settings/SecuritySettings.java
+index 55f21fd22a..68cedf0c36 100644
+--- a/src/com/android/settings/SecuritySettings.java
++++ b/src/com/android/settings/SecuritySettings.java
+@@ -279,7 +279,7 @@ public class SecuritySettings extends SettingsPreferenceFragment
+         root = getPreferenceScreen();
+ 
+         // Add category for security status
+-        addPreferencesFromResource(R.xml.security_settings_status);
++        //addPreferencesFromResource(R.xml.security_settings_status);
+ 
+         // Add options for lock/unlock screen
+         final int resid = getResIdForLockUnlockScreen(getActivity(), mLockPatternUtils,
+@@ -287,7 +287,7 @@ public class SecuritySettings extends SettingsPreferenceFragment
+         addPreferencesFromResource(resid);
+ 
+         // DO or PO installed in the user may disallow to change password.
+-        disableIfPasswordQualityManaged(KEY_UNLOCK_SET_OR_CHANGE, MY_USER_ID);
++        //disableIfPasswordQualityManaged(KEY_UNLOCK_SET_OR_CHANGE, MY_USER_ID);
+ 
+         mProfileChallengeUserId = Utils.getManagedProfileId(mUm, MY_USER_ID);
+         if (mProfileChallengeUserId != UserHandle.USER_NULL
+@@ -322,6 +322,7 @@ public class SecuritySettings extends SettingsPreferenceFragment
+             ((GearPreference) unlockSetOrChange).setOnGearClickListener(this);
+         }
+ 
++	/*
+         mIsAdmin = mUm.isAdminUser();
+ 
+         // Fingerprint and trust agents
+@@ -339,7 +340,7 @@ public class SecuritySettings extends SettingsPreferenceFragment
+         mUnifyProfile = (SwitchPreference) root.findPreference(KEY_UNIFICATION);
+ 
+         // Append the rest of the settings
+-        addPreferencesFromResource(R.xml.security_settings_misc);
++        //addPreferencesFromResource(R.xml.security_settings_misc);
+ 
+         // Do not display SIM lock for devices without an Icc card
+         TelephonyManager tm = TelephonyManager.getDefault();
+@@ -383,7 +384,7 @@ public class SecuritySettings extends SettingsPreferenceFragment
+         final Activity activity = getActivity();
+         FeatureFactory.getFactory(activity).getSearchFeatureProvider().getIndexingManager(activity)
+                 .updateFromClassNameResource(SecuritySettings.class.getName(),
+-                        true /* includeInSearchResults */);
++                        true);
+ 
+         PreferenceGroup securityStatusPreferenceGroup =
+                 (PreferenceGroup) root.findPreference(KEY_SECURITY_STATUS);
+@@ -426,7 +427,7 @@ public class SecuritySettings extends SettingsPreferenceFragment
+                 root.findPreference(KEY_MANAGE_DEVICE_ADMIN));
+         mEnterprisePrivacyPreferenceController.displayPreference(root);
+         mEnterprisePrivacyPreferenceController.onResume();
+-
++       */
+         return root;
+     }
+ 
+@@ -625,7 +626,7 @@ public class SecuritySettings extends SettingsPreferenceFragment
+                     Settings.System.TEXT_SHOW_PASSWORD, 1) != 0);
+         }
+ 
+-        mLocationcontroller.updateSummary();
++        //mLocationcontroller.updateSummary();
+     }
+ 
+     private void updateUnificationPreference() {
+diff --git a/src/com/android/settings/localepicker/LocaleListEditor.java b/src/com/android/settings/localepicker/LocaleListEditor.java
+index 9590545c50..d9a0863838 100644
+--- a/src/com/android/settings/localepicker/LocaleListEditor.java
++++ b/src/com/android/settings/localepicker/LocaleListEditor.java
+@@ -129,7 +129,7 @@ public class LocaleListEditor extends SettingsPreferenceFragment
+     private void setRemoveMode(boolean mRemoveMode) {
+         this.mRemoveMode = mRemoveMode;
+         mAdapter.setRemoveMode(mRemoveMode);
+-        mAddLanguage.setVisibility(mRemoveMode ? View.INVISIBLE : View.VISIBLE);
++        //mAddLanguage.setVisibility(mRemoveMode ? View.INVISIBLE : View.VISIBLE);
+         updateVisibilityOfRemoveMenu();
+     }
+ 
+@@ -222,11 +222,16 @@ public class LocaleListEditor extends SettingsPreferenceFragment
+     private static List<LocaleStore.LocaleInfo> getUserLocaleList(Context context) {
+         final List<LocaleStore.LocaleInfo> result = new ArrayList<>();
+ 
+-        final LocaleList localeList = LocalePicker.getLocales();
++        /*final LocaleList localeList = LocalePicker.getLocales();
+         for (int i = 0; i < localeList.size(); i++) {
+             Locale locale = localeList.get(i);
+             result.add(LocaleStore.getLocaleInfo(locale));
+-        }
++        }*/
++	result.add(LocaleStore.getLocaleInfo(Locale.forLanguageTag("en-US")));
++	result.add(LocaleStore.getLocaleInfo(Locale.forLanguageTag("zh-Hans-HK")));
++	result.add(LocaleStore.getLocaleInfo(Locale.forLanguageTag("zh-Hans-MO")));
++	result.add(LocaleStore.getLocaleInfo(Locale.forLanguageTag("zh-Hant-HK")));
++	result.add(LocaleStore.getLocaleInfo(Locale.forLanguageTag("zh-Hant-MO")));
+ 
+         return result;
+     }
+@@ -241,12 +246,12 @@ public class LocaleListEditor extends SettingsPreferenceFragment
+         mAdapter.setRecyclerView(list);
+         list.setAdapter(mAdapter);
+ 
+-        mAddLanguage = view.findViewById(R.id.add_language);
++        /* mAddLanguage = view.findViewById(R.id.add_language);
+         mAddLanguage.setOnClickListener(new View.OnClickListener() {
+             @Override
+             public void onClick(View v) {
+                 final LocalePickerWithRegion selector = LocalePickerWithRegion.createLanguagePicker(
+-                        getContext(), LocaleListEditor.this, false /* translate only */);
++                        getContext(), LocaleListEditor.this, false );
+                 getFragmentManager()
+                         .beginTransaction()
+                         .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
+@@ -255,6 +260,7 @@ public class LocaleListEditor extends SettingsPreferenceFragment
+                         .commit();
+             }
+         });
++	*/
+     }
+ 
+     @Override
+@@ -274,7 +280,8 @@ public class LocaleListEditor extends SettingsPreferenceFragment
+         if (menuItemRemove != null) {
+             menuItemRemove.setShowAsAction(
+                     mRemoveMode ? MenuItem.SHOW_AS_ACTION_ALWAYS : MenuItem.SHOW_AS_ACTION_NEVER);
+-            menuItemRemove.setVisible(mAdapter.getItemCount() > 1);
++            //menuItemRemove.setVisible(mAdapter.getItemCount() > 1);
++            menuItemRemove.setVisible(false);// Having pre-set default set of language supported.
+         }
+     }
+ }
